@@ -35,19 +35,42 @@ namespace ConsoleAppMysqllock
         /// <param name="id"></param>
         public static void Run(int id = 56)
         {
-            var conn2 = DataManage.Conn();
-            string str32 = conn2.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
-            Console.WriteLine("{1} select aid:{0}", str32, Thread.CurrentThread.ManagedThreadId);
-
             using (var trans = new TransactionScope())
             {
                 var conn = DataManage.Conn();
 
                 //1:normal
                 string str = conn.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id for update", new { Id = id });
-                Console.WriteLine("{1} select aid:{0}",str,Thread.CurrentThread.ManagedThreadId);
-                
-                bool flag=conn.Execute("update OCRRecord set aid=@Aid where id=@Id", new { Aid = DateTime.Now.Second, Id = id })>0;
+                Console.WriteLine("{1} select aid:{0}", str, Thread.CurrentThread.ManagedThreadId);
+
+                bool flag = conn.Execute("update OCRRecord set aid=@Aid where id=@Id", new { Aid = DateTime.Now.Second, Id = id }) > 0;
+                Console.WriteLine("{1} update {0}", flag, Thread.CurrentThread.ManagedThreadId);
+
+                string str2 = conn.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
+                Console.WriteLine("{1} select aid:{0}", str2, Thread.CurrentThread.ManagedThreadId);
+
+            }
+        }
+
+        /// <summary>
+        /// normal
+        /// </summary>
+        /// <param name="id"></param>
+        public static void Run2(int id = 56)
+        {
+            //IsolationLevel.Chaos 不支持
+            //IsolationLevel.Snapshot 不支持
+            //IsolationLevel.Serializable 死锁
+            //IsolationLevel.Unspecified 死锁
+            using (var trans = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.Snapshot }, EnterpriseServicesInteropOption.None))
+            {
+                var conn = DataManage.Conn();
+
+                //1:normal
+                string str = conn.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
+                Console.WriteLine("{1} select aid:{0}", str, Thread.CurrentThread.ManagedThreadId);
+
+                bool flag = conn.Execute("update OCRRecord set aid=@Aid where id=@Id", new { Aid = DateTime.Now.Second, Id = id }) > 0;
                 Console.WriteLine("{1} update {0}", flag, Thread.CurrentThread.ManagedThreadId);
 
                 string str2 = conn.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
@@ -60,7 +83,7 @@ namespace ConsoleAppMysqllock
         /// MySql.Data.MySqlClient.MySqlException:“Deadlock found when trying to get lock; try restarting transaction
         /// </summary>
         /// <param name="id"></param>
-        public static void Run2(int id = 56)
+        public static void Run3(int id = 56)
         {
             var conn2 = DataManage.Conn();
             string str32 = conn2.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
@@ -89,7 +112,7 @@ namespace ConsoleAppMysqllock
         /// normal
         /// </summary>
         /// <param name="id"></param>
-        public static void Run3(int id = 56)
+        public static void Run4(int id = 56)
         {
             var conn2 = DataManage.Conn();
             string str = conn2.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id", new { Id = id });
@@ -114,7 +137,7 @@ namespace ConsoleAppMysqllock
         /// 
         /// </summary>
         /// <param name="id"></param>
-        public static void Run4(int id = 56)
+        public static void Run5(int id = 56)
         {
             using (var conn = DataManage.Conn())
             {
@@ -133,7 +156,7 @@ namespace ConsoleAppMysqllock
         {
             using (var conn = DataManage.Conn())
             {
-                using (var tr = conn.BeginTransaction())
+                using (var tr = conn.BeginTransaction(System.Data.IsolationLevel.Serializable))
                 {
                     //string str = conn.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id },transaction:tr);
                     string str = tr.Connection.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });

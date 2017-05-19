@@ -15,8 +15,8 @@ namespace ConsoleAppMysqllock
             {
                 Task.Run(() =>
                 {
-                    mysqlData.Run3(56);
-                    
+                    //mysqlData.Run2(56);
+                    mysqlData.Run6(56);
                 });
                 Thread.Sleep(100);
             }
