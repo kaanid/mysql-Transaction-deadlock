@@ -62,7 +62,7 @@ namespace ConsoleAppMysqllock
             //IsolationLevel.Snapshot 不支持
             //IsolationLevel.Serializable 死锁
             //IsolationLevel.Unspecified 死锁
-            using (var trans = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.Snapshot }, EnterpriseServicesInteropOption.None))
+            using (var trans = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.RepeatableRead }, EnterpriseServicesInteropOption.None))
             {
                 var conn = DataManage.Conn();
 
@@ -159,6 +159,24 @@ namespace ConsoleAppMysqllock
                 using (var tr = conn.BeginTransaction(System.Data.IsolationLevel.Serializable))
                 {
                     //string str = conn.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id },transaction:tr);
+                    string str = tr.Connection.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
+                    Console.WriteLine("{1} select aid:{0}", str, Thread.CurrentThread.ManagedThreadId);
+
+                    bool flag = tr.Connection.Execute("update OCRRecord set aid=aid+@Aid where id=@Id", new { Aid = 1, Id = id }) > 0;
+                    Console.WriteLine("{1} update {0}", flag, Thread.CurrentThread.ManagedThreadId);
+
+                    string str2 = tr.Connection.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
+                    Console.WriteLine("{1} select aid:{0}", str2, Thread.CurrentThread.ManagedThreadId);
+                }
+            }
+        }
+
+        public static void Run7(int id = 56)
+        {
+            using (var conn = DataManage.Conn())
+            {
+                using (var tr = conn.BeginTransaction()) //default:IsolationLevel.ReadCommitted
+                {
                     string str = tr.Connection.QueryFirstOrDefault<string>("select aid from OCRRecord where id=@Id;", new { Id = id });
                     Console.WriteLine("{1} select aid:{0}", str, Thread.CurrentThread.ManagedThreadId);
 
