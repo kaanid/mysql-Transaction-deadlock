@@ -14,7 +14,7 @@ https://msdn.microsoft.com/zh-cn/library/system.transactions.isolationlevel(v=vs
 
 
 ## TransactionScope
-default:IsolationLevel.ReadCommitted
+default:IsolationLevel.Serializable
 
 
 
