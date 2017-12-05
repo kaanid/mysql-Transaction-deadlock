@@ -23,3 +23,8 @@ Dapper:
 default:IsolationLevel.ReadCommitted
 
 Testing.......
+
+### MySQl 查看
+SHOW INNODB STATUS;
+
+命令后，在LASTEST DETECTED DEADLOCK节会看到最近发生的一个（最近的一个）死锁信息，在里面可以找到发生死锁的线程ID和SQL语句。
